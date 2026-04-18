@@ -31,7 +31,31 @@ def get_popup() -> MainPopup:
     if popup is None:
         popup = MainPopup(tracker, quiz_engine, session_log, parent=mw)
         popup.set_manual_quiz_callback(fire_quiz)
+        _load_config(popup)
+        popup.n_spin.valueChanged.connect(lambda _: _save_config())
+        popup.mode_combo.currentTextChanged.connect(lambda _: _save_config())
     return popup
+
+
+def _load_config(p: MainPopup):
+    try:
+        cfg = mw.addonManager.getConfig(__name__) or {}
+        p.n_spin.setValue(cfg.get("span_n", 5))
+        mode_text = "Auto" if cfg.get("quiz_mode", "auto") == "auto" else "Manual"
+        p.mode_combo.setCurrentText(mode_text)
+    except Exception as e:
+        logger.error("_load_config error: %s", e)
+
+
+def _save_config():
+    try:
+        p = get_popup()
+        cfg = mw.addonManager.getConfig(__name__) or {}
+        cfg["span_n"] = p.get_n()
+        cfg["quiz_mode"] = "auto" if p.is_auto_mode() else "manual"
+        mw.addonManager.writeConfig(__name__, cfg)
+    except Exception as e:
+        logger.error("_save_config error: %s", e)
 
 
 def fire_quiz():
