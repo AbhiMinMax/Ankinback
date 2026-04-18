@@ -11,7 +11,7 @@ class QuizDialog(QDialog):
         self.result: bool | None = None
         self._setup_ui()
         self.setWindowTitle("Working Memory Check")
-        self.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint)
         self.setMinimumWidth(420)
 
     def _setup_ui(self):

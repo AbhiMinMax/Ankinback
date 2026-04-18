@@ -22,7 +22,10 @@ class HistoryWindow(QDialog):
         self.table.setHorizontalHeaderLabels(["Date", "Time", "Deck", "N", "Score", "Accuracy %"])
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header = self.table.horizontalHeader()
+        for col in (0, 1, 3, 4, 5):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.table)
 
         self.clear_btn = QPushButton("Clear History")
@@ -41,7 +44,10 @@ class HistoryWindow(QDialog):
         for row, rec in enumerate(records):
             self.table.setItem(row, 0, QTableWidgetItem(rec.get("date", "")))
             self.table.setItem(row, 1, QTableWidgetItem(rec.get("time", "")))
-            self.table.setItem(row, 2, QTableWidgetItem(rec.get("deck", "")))
+            deck_name = rec.get("deck", "")
+            deck_item = QTableWidgetItem(deck_name)
+            deck_item.setToolTip(deck_name)
+            self.table.setItem(row, 2, deck_item)
             self.table.setItem(row, 3, QTableWidgetItem(str(rec.get("span_n", ""))))
             score = f"{rec.get('correct', 0)} / {rec.get('total', 0)}"
             self.table.setItem(row, 4, QTableWidgetItem(score))

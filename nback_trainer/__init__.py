@@ -22,6 +22,7 @@ session_log = SessionLog(log_path)
 popup: MainPopup | None = None
 history_win: HistoryWindow | None = None
 _current_deck: str = ""
+_quiz_active: bool = False
 
 
 def get_popup() -> MainPopup:
@@ -33,15 +34,22 @@ def get_popup() -> MainPopup:
 
 
 def fire_quiz():
+    global _quiz_active
+    if _quiz_active:
+        return
     p = get_popup()
     n = p.get_n()
     question = quiz_engine.generate(n)
     if question is None:
         return
-    dlg = QuizDialog(question, parent=mw)
-    dlg.exec()
-    if dlg.result is not None:
-        p.record_answer(dlg.result)
+    _quiz_active = True
+    try:
+        dlg = QuizDialog(question, parent=mw)
+        dlg.exec()
+        if dlg.result is not None:
+            p.record_answer(dlg.result)
+    finally:
+        _quiz_active = False
 
 
 def on_show_question(card):
