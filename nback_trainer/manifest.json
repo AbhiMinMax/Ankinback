@@ -1,0 +1,11 @@
+{
+    "name": "Verbal Working Memory Trainer",
+    "package": "nback_trainer",
+    "author": "",
+    "version": "1.0.0",
+    "ankiweb_id": "",
+    "homepage": "",
+    "tags": ["working memory", "n-back", "trainer"],
+    "conflicts": [],
+    "min_point_version": 231000
+}
