@@ -1,4 +1,5 @@
 import os
+import json as _json
 import logging
 
 from aqt import mw, gui_hooks
@@ -60,19 +61,125 @@ def fire_quiz():
     global _quiz_active
     if _quiz_active:
         return
+    if not mw.reviewer:
+        return
     p = get_popup()
     n = p.get_n()
     question = quiz_engine.generate(n)
     if question is None:
         return
     _quiz_active = True
-    p.show_quiz(question, _on_quiz_done)
+    _show_quiz_overlay(question)
+
+
+def _show_quiz_overlay(question: dict):
+    global _quiz_active
+    opts_json = _json.dumps([str(o) for o in question["options"]])
+    correct_idx = int(question["correct_index"])
+    k = int(question["k"])
+
+    js = f"""
+(function() {{
+    var old = document.getElementById('nback-overlay');
+    if (old) old.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'nback-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;'
+        + 'background:rgba(0,0,0,0.82);z-index:99999;display:flex;'
+        + 'align-items:center;justify-content:center;';
+
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:10px;padding:28px 32px;'
+        + 'max-width:520px;width:92%;box-shadow:0 4px 32px rgba(0,0,0,0.4);';
+
+    var title = document.createElement('div');
+    title.style.cssText = 'font-size:17px;font-weight:700;margin-bottom:18px;color:#222;';
+    title.textContent = 'What was card {k}-back?';
+    box.appendChild(title);
+
+    var opts = {opts_json};
+    var correctIdx = {correct_idx};
+    var answered = false;
+    var btns = [];
+
+    function selectAnswer(idx) {{
+        if (answered) return;
+        answered = true;
+        document.removeEventListener('keydown', keyHandler, true);
+        btns[correctIdx].style.background = '#4CAF50';
+        btns[correctIdx].style.color = '#fff';
+        if (idx !== correctIdx) {{
+            btns[idx].style.background = '#F44336';
+            btns[idx].style.color = '#fff';
+        }}
+        setTimeout(function() {{
+            overlay.remove();
+            if (typeof pycmd !== 'undefined') {{
+                pycmd('nback_answer:' + idx + ':' + correctIdx);
+            }}
+        }}, 600);
+    }}
+
+    opts.forEach(function(opt, i) {{
+        var btn = document.createElement('button');
+        btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;'
+            + 'margin-bottom:10px;font-size:14px;border:1px solid #ddd;border-radius:6px;'
+            + 'cursor:pointer;background:#fafafa;color:#222;box-sizing:border-box;';
+        btn.textContent = (i + 1) + '. ' + opt;
+        btn.onmouseover = function() {{ if (!answered) this.style.background = '#f0f0f0'; }};
+        btn.onmouseout  = function() {{ if (!answered) this.style.background = '#fafafa'; }};
+        btn.onclick = (function(i) {{ return function() {{ selectAnswer(i); }}; }})(i);
+        box.appendChild(btn);
+        btns.push(btn);
+    }});
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    function keyHandler(e) {{
+        var n = parseInt(e.key, 10);
+        if (n >= 1 && n <= 4) {{
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            selectAnswer(n - 1);
+        }} else if (e.key === ' ' || e.key === 'Enter') {{
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }}
+    }}
+    document.addEventListener('keydown', keyHandler, true);
+}})();
+"""
+    try:
+        mw.reviewer.web.eval(js)
+    except Exception as e:
+        logger.error("_show_quiz_overlay error: %s", e)
+        _quiz_active = False
 
 
 def _on_quiz_done(result: bool):
     global _quiz_active
     _quiz_active = False
-    get_popup().record_answer(result)
+    p = get_popup()
+    p.record_answer(result)
+    if p.isVisible():
+        p.refresh()
+
+
+def on_js_message(handled, message, context):
+    global _quiz_active
+    if isinstance(message, str) and message.startswith("nback_answer:"):
+        try:
+            parts = message.split(":")
+            selected = int(parts[1])
+            correct_idx = int(parts[2])
+            _on_quiz_done(selected == correct_idx)
+        except Exception as e:
+            logger.error("on_js_message error: %s", e)
+            _quiz_active = False
+        return (True, None)
+    return handled
 
 
 def on_show_question(card):
@@ -90,6 +197,8 @@ def on_show_question(card):
 
 
 def on_reviewer_end():
+    global _quiz_active
+    _quiz_active = False
     try:
         p = get_popup()
         cfg = mw.addonManager.getConfig(__name__) or {}
@@ -124,6 +233,7 @@ def open_history():
 
 gui_hooks.reviewer_did_show_question.append(on_show_question)
 gui_hooks.reviewer_will_end.append(on_reviewer_end)
+gui_hooks.webview_did_receive_js_message.append(on_js_message)
 
 action_popup = QAction("WM Trainer", mw)
 action_popup.triggered.connect(open_popup)
