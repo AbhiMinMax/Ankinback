@@ -2,12 +2,11 @@ import os
 import logging
 
 from aqt import mw, gui_hooks
-from aqt.qt import QAction, QTimer
+from aqt.qt import QAction
 
 from .tracker import SessionTracker
 from .quiz import QuizEngine
 from .popup import MainPopup
-from .quiz_dialog import QuizDialog
 from .history_window import HistoryWindow
 from .session_log import SessionLog
 
@@ -67,15 +66,13 @@ def fire_quiz():
     if question is None:
         return
     _quiz_active = True
-    try:
-        dlg = QuizDialog(question, parent=mw)
-        QTimer.singleShot(0, dlg.raise_)
-        QTimer.singleShot(0, dlg.activateWindow)
-        dlg.exec()
-        if dlg.result is not None:
-            p.record_answer(dlg.result)
-    finally:
-        _quiz_active = False
+    p.show_quiz(question, _on_quiz_done)
+
+
+def _on_quiz_done(result: bool):
+    global _quiz_active
+    _quiz_active = False
+    get_popup().record_answer(result)
 
 
 def on_show_question(card):
