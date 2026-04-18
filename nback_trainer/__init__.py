@@ -2,7 +2,7 @@ import os
 import logging
 
 from aqt import mw, gui_hooks
-from aqt.qt import QAction
+from aqt.qt import QAction, QTimer
 
 from .tracker import SessionTracker
 from .quiz import QuizEngine
@@ -69,6 +69,8 @@ def fire_quiz():
     _quiz_active = True
     try:
         dlg = QuizDialog(question, parent=mw)
+        QTimer.singleShot(0, dlg.raise_)
+        QTimer.singleShot(0, dlg.activateWindow)
         dlg.exec()
         if dlg.result is not None:
             p.record_answer(dlg.result)

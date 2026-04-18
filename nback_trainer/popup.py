@@ -50,6 +50,11 @@ class MainPopup(QDialog):
         self.score_label.setStyleSheet("font-weight: bold; font-size: 13px;")
         layout.addWidget(self.score_label)
 
+        self.start_btn = QPushButton("Start Session")
+        self.start_btn.setStyleSheet("padding: 6px; font-weight: bold;")
+        self.start_btn.clicked.connect(self.hide)
+        layout.addWidget(self.start_btn)
+
         self.list_area = QTextEdit()
         self.list_area.setReadOnly(True)
         self.list_area.setVisible(False)
