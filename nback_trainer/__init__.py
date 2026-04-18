@@ -23,7 +23,6 @@ popup: MainPopup | None = None
 history_win: HistoryWindow | None = None
 _current_deck: str = ""
 _quiz_active: bool = False
-_session_active: bool = False
 
 
 def get_popup() -> MainPopup:
@@ -78,16 +77,11 @@ def fire_quiz():
 
 
 def on_show_question(card):
-    global _current_deck, _session_active
+    global _current_deck
     try:
         _current_deck = card.col.decks.name(card.did)
         tracker.add(card)
         p = get_popup()
-        if not _session_active:
-            _session_active = True
-            p.show()
-            p.raise_()
-            p.activateWindow()
         if p.is_auto_mode():
             fire_quiz()
         if p.isVisible():
@@ -97,8 +91,6 @@ def on_show_question(card):
 
 
 def on_reviewer_end():
-    global _session_active
-    _session_active = False
     try:
         p = get_popup()
         cfg = mw.addonManager.getConfig(__name__) or {}
