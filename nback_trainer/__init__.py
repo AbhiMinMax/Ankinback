@@ -213,6 +213,9 @@ def on_reviewer_end():
                 deck=_current_deck,
                 session_type=session_type,
             )
+        p._session_correct = 0
+        p._session_total = 0
+        p._update_score()
     except Exception as e:
         logger.error("on_reviewer_end error: %s", e)
 
