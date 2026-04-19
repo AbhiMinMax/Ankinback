@@ -21,8 +21,18 @@ session_log = SessionLog(log_path)
 
 popup: MainPopup | None = None
 history_win: HistoryWindow | None = None
-_current_deck: str = ""
+_session_decks: set[str] = set()
 _quiz_active: bool = False
+
+
+def _session_deck_label() -> str:
+    if not _session_decks:
+        return ""
+    parts_list = [d.split("::") for d in _session_decks]
+    common = parts_list[0]
+    for parts in parts_list[1:]:
+        common = [a for a, b in zip(common, parts) if a == b]
+    return "::".join(common) if common else "Multiple decks"
 
 
 def get_popup() -> MainPopup:
@@ -183,10 +193,10 @@ def on_js_message(handled, message, context):
 
 
 def on_show_question(card):
-    global _current_deck, _quiz_active
+    global _session_decks, _quiz_active
     try:
         _quiz_active = False
-        _current_deck = card.col.decks.name(card.did)
+        _session_decks.add(card.col.decks.name(card.did))
         tracker.add(card)
         p = get_popup()
         if p.is_auto_mode():
@@ -198,7 +208,7 @@ def on_show_question(card):
 
 
 def on_reviewer_end():
-    global _quiz_active
+    global _quiz_active, _session_decks
     _quiz_active = False
     try:
         p = get_popup()
@@ -210,12 +220,13 @@ def on_reviewer_end():
                 n=p.get_n(),
                 correct=p._session_correct,
                 total=total,
-                deck=_current_deck,
+                deck=_session_deck_label(),
                 session_type=session_type,
             )
         p._session_correct = 0
         p._session_total = 0
         p._update_score()
+        _session_decks = set()
     except Exception as e:
         logger.error("on_reviewer_end error: %s", e)
 
