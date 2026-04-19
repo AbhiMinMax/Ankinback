@@ -3,7 +3,7 @@ import json as _json
 import logging
 
 from aqt import mw, gui_hooks
-from aqt.qt import QAction
+from aqt.qt import QAction, QTimer
 
 from .tracker import SessionTracker
 from .quiz import QuizEngine
@@ -69,7 +69,7 @@ def fire_quiz():
     if question is None:
         return
     _quiz_active = True
-    _show_quiz_overlay(question)
+    QTimer.singleShot(150, lambda: _show_quiz_overlay(question))
 
 
 def _show_quiz_overlay(question: dict):
@@ -183,8 +183,9 @@ def on_js_message(handled, message, context):
 
 
 def on_show_question(card):
-    global _current_deck
+    global _current_deck, _quiz_active
     try:
+        _quiz_active = False
         _current_deck = card.col.decks.name(card.did)
         tracker.add(card)
         p = get_popup()
