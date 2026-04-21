@@ -246,6 +246,7 @@ def open_history():
 
 gui_hooks.reviewer_did_show_question.append(on_show_question)
 gui_hooks.reviewer_will_end.append(on_reviewer_end)
+gui_hooks.profile_will_close.append(on_reviewer_end)
 gui_hooks.webview_did_receive_js_message.append(on_js_message)
 
 action_popup = QAction("WM Trainer", mw)
