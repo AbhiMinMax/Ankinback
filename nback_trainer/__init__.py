@@ -136,7 +136,7 @@ def _show_quiz_overlay(question: dict):
         btn.style.cssText = 'display:block;width:100%;text-align:left;padding:10px 14px;'
             + 'margin-bottom:10px;font-size:14px;border:1px solid #ddd;border-radius:6px;'
             + 'cursor:pointer;background:#fafafa;color:#222;box-sizing:border-box;';
-        btn.textContent = (i + 1) + '. ' + opt;
+        btn.textContent = '[Shift+' + (i + 1) + '] ' + opt;
         btn.onmouseover = function() {{ if (!answered) this.style.background = '#f0f0f0'; }};
         btn.onmouseout  = function() {{ if (!answered) this.style.background = '#fafafa'; }};
         btn.onclick = (function(i) {{ return function() {{ selectAnswer(i); }}; }})(i);
@@ -148,14 +148,12 @@ def _show_quiz_overlay(question: dict):
     document.body.appendChild(overlay);
 
     function keyHandler(e) {{
+        if (!e.shiftKey) return;
         var n = parseInt(e.key, 10);
         if (n >= 1 && n <= 4) {{
             e.preventDefault();
             e.stopImmediatePropagation();
             selectAnswer(n - 1);
-        }} else if (e.key === ' ' || e.key === 'Enter') {{
-            e.preventDefault();
-            e.stopImmediatePropagation();
         }}
     }}
     document.addEventListener('keydown', keyHandler, true);
