@@ -22,8 +22,12 @@ class SessionTracker:
         return list(reversed(self._history[-n:]))
 
     def get_at(self, k_back: int) -> str | None:
-        idx = len(self._history) - k_back
-        return self._history[idx] if idx >= 0 else None
+        # k_back=1 means the card seen immediately before the current one.
+        # The current card sits at history[-1], so we subtract an extra 1.
+        idx = len(self._history) - 1 - k_back
+        if 0 <= idx < len(self._history):
+            return self._history[idx]
+        return None
 
     def get_recent(self, count: int) -> list[str]:
         return list(self._history[-count:])
